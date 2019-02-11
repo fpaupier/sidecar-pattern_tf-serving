@@ -42,31 +42,29 @@ import os
 
 from google.cloud import pubsub_v1, storage
 
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
-
-def process_event(message):
+def process_event(message, save_dir):
     # [START parse_message]
     data = message.data.decode("utf-8")
     attributes = message.attributes
 
     object_id = attributes["objectId"]
-    
+
     # Only process zipped file
-    file_extension = object_id.split('.')[1]
+    file_extension = object_id.split(".")[1]
     if file_extension != "zip":
-        return(f"Warning: File {object_id} is not of type `.zip`.\nFile not saved")
+        return f"Warning: File {object_id} is not of type `.zip`.\nFile not saved"
+    else:
+        compressed_model = object_id
 
     bucket_id = attributes["bucketId"]
     event_type = attributes["eventType"]
     description = (
         "\tEvent type: {event_type}\n"
         "\tBucket ID: {bucket_id}\n"
-        "\tObject ID: {object_id}\n"
+        "\tObject ID: {compressed_model}\n"
     ).format(
-        event_type=event_type,
-        bucket_id=bucket_id,
-        object_id=object_id,
+        event_type=event_type, bucket_id=bucket_id, compressed_model=compressed_model
     )
 
     payload_format = attributes["payloadFormat"]
@@ -83,25 +81,24 @@ def process_event(message):
             content_type=content_type, object_size=size, metageneration=metageneration
         )
         if event_type == "OBJECT_FINALIZE":
-            f_path = f"output-{object_id}"
-            models_dir_path = DIR_PATH
-            print(f"Download zip file {object_id} as {f_path}")
-            download_blob(bucket_id, object_id, f_path)
-            with zipfile.ZipFile(f_path, "r") as zip_ref:
-                print(f"Extract archive to {models_dir_path}")
-                zip_ref.extractall(models_dir_path)
+            print(f"Download zip file {compressed_model}")
+            download_blob(bucket_id, compressed_model, compressed_model)
+            with zipfile.ZipFile(compressed_model, "r") as zip_ref:
+                print(f"Extract archive to {save_dir}")
+                zip_ref.extractall(save_dir)
+                os.remove(compressed_model)
     return description
     # [END parse_message]
 
 
-def poll_models(project, subscription_name):
+def poll_models(project, subscription_name, save_dir):
     """Polls a Cloud Pub/Sub subscription for new GCS events for display."""
     # [BEGIN poll_models]
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(project, subscription_name)
 
     def callback(message):
-        print("Received message:\n{}".format(process_event(message)))
+        print("Received message:\n{}".format(process_event(message, save_dir)))
         message.ack()
 
     subscriber.subscribe(subscription_path, callback=callback)
@@ -130,8 +127,13 @@ if __name__ == "__main__":
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
-        "project", help="The ID of the project that owns the subscription"
+        "project", help="The ID of the project that owns the subscription", type=str
     )
-    parser.add_argument("subscription", help="The ID of the Pub/Sub subscription")
+    parser.add_argument(
+        "subscription", help="The ID of the Pub/Sub subscription", type=str
+    )
+    parser.add_argument(
+        "save_dir", help="The directory where models should be saved", type=str
+    )
     args = parser.parse_args()
-    poll_models(args.project, args.subscription)
+    poll_models(args.project, args.subscription, args.save_dir)
