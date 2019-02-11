@@ -2,5 +2,5 @@
 set -e
 
 export GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
-cd model_polling/
+cd model_poller/
 python model_polling.py $PROJECT_ID $SUBSCRIPTION $SAVE_DIR
