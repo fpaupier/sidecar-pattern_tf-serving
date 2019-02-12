@@ -1,7 +1,7 @@
 # Sidecar design pattern applied to tensorflow-serving distribution
 
 ## What's in the box?
-This repository illustrates the [sidecar container design pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar) applied to [tensorflow serving](https://www.tensorflow.org/serving/).
+This repository illustrates the [sidecar container design pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar) applied to [tensorflow serving](https://www.tensorflow.org/serving/) to automatically pull new model versions from a storage bucket.
 
 ## Gist 
 The goal of this pattern is to use a vanilla tensorflow-serving container coupled with a sidecar container polling a storage for new models to serve. When a model is pushed on the storage, it is downloaded, decompressed and moved to the directory used by tensorflow serving to load models. 
