@@ -1,4 +1,4 @@
-# Sidecar design pattern applied to tensorflow-serving distribution
+# A `model_poller` sidecar container to feed  `tensorflow/serving` with up to date model versions
 
 ## What's in the box?
 This repository illustrates the [sidecar container design pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar) applied to [tensorflow serving](https://www.tensorflow.org/serving/) to automatically pull new model versions from a storage bucket.
