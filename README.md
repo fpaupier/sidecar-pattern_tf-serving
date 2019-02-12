@@ -1,14 +1,32 @@
 # Sidecar design pattern applied to tensorflow-serving distribution
 
-## Gist 
-![Model overview](assets/overview.png)
-
 ## What's in the box?
-
 This repository illustrates the [sidecar container design pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar) applied to [tensorflow serving](https://www.tensorflow.org/serving/).
 
+## Gist 
 The goal of this pattern is to use a vanilla tensorflow-serving container coupled with a sidecar container polling a storage for new models to serve. When a model is pushed on the storage, it is downloaded, decompressed and moved to the directory used by tensorflow serving to load models. 
 Then, tensorflow serving automatically load the new model, serves it and gracefully terminate the serving of the previous model.
+
+![Model overview](assets/overview.png)
+
+1. After training, a model is exported as  [`saved_model`](https://www.tensorflow.org/guide/saved_model) that can be used for inference.  
+2. The folder containing the `saved_model` and its assosciated variables is named with a version number _e.g._ `0001`. The folder `0001` is compressed in a `zip` and uploaded in a storage bucket.
+```bash
+# Structure of the versionned model folder
+
+ 0001/
+  |
+  |--saved_model.pb 
+  |
+  |--variables/
+  |     |
+  |     ...
+```
+
+3. In the server, two containers: `tensorflow/serving` and `model_poller` are running and share the same local file system. `model_poller` polls the bucket for new model versions and download the new models available. The models are downloaded in the folder used by tensorflow serving to check for model sources.
+
+4. `tensorlfow/serving` detects whenever a new model version in available and automatically load it in memory. It starts serving incoming requests with the new version while finishing to process the requests on the previous model version. Once all the former model version requests have been handled it it unloaded for memory. The model version migration has been without service interruption.
+ 
 
 ## Setting-up the `model_poller` to listen to a Google Cloud Storage bucket changes
 
@@ -120,6 +138,6 @@ You can now push your image to an image repository and use it combined with tens
 ## Next steps
 This project is a proof of concept, thus it can be enhanced in many ways.
 
-- [] Delete local model files when model are removed from the bucket.
-- [] Investigate different IAM process 
-- [] Propose a sample k8s.yaml configuration file that would be use to deploy the `model_poller` and `tensorflow/serving` containers at the same time.
+- [ ] Delete local model files when model are removed from the bucket.
+- [ ] Investigate different IAM process 
+- [ ] Propose a sample k8s.yaml configuration file that would be use to deploy the `model_poller` and `tensorflow/serving` containers at the same time.
