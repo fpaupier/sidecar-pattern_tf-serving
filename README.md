@@ -37,7 +37,7 @@ From now on, I assume you have a valid GCP project, created a bucket on GCS with
 
 1. The simplest way to reproduce the results below is to pull the `model_poller` image.
 ```bash
-docker pull popszer/model_poller
+docker pull popszer/model_poller:v0.1.5
 ```
 
 2. Run the `model_poller`
@@ -57,7 +57,7 @@ docker run --name model_poller -t \
 -e SUBSCRIPTION=$SUBSCRIPTION \
 -e SAVE_DIR=$SAVE_DIR \
 -e GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS \
-model_poller:v.0.1.5 &
+popszer/model_poller:v.0.1.5 &
 ``` 
 
 While the container is running, upload some files in the bucket
