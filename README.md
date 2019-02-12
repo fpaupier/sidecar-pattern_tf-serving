@@ -1,30 +1,34 @@
 # Sidecar design pattern applied to tensorflow-serving distribution
 
+## Gist 
+![Model overview](assets/overview.png)
+
 ## What's in the box?
 
 This repository illustrates the [sidecar container design pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar) applied to [tensorflow serving](https://www.tensorflow.org/serving/).
 
 The goal of this pattern is to use a vanilla tensorflow-serving container coupled with a sidecar container polling a storage for new models to serve. When a model is pushed on the storage, it is downloaded, decompressed and moved to the directory used by tensorflow serving to load models. 
-Then, tensorflow serving automatically load the new model without and gracefully terminate the serving of the previous model.
+Then, tensorflow serving automatically load the new model, serves it and gracefully terminate the serving of the previous model.
 
-## Quick setup
+## Setting-up the `model_poller` to listen to a Google Cloud Storage bucket changes
 
 A Docker Image built from this respository `Dockerfile` can be obtained on Docker hub. You can quickly test the pattern with this image and a tensorflow serving model.
+
+0. Setup a Google cloud project, check the steps detailed in [docs/gcloud_setup.md](docs/gcloud_setup.md).
+From now on, I assume you have a valid GCP project, created a bucket on GCS with a subsscription and have a `json` service key. This image is a POC and the IAM process is done with a Google Application Credentials `json` key passed to the container at runtime. 
 
 1. The simplest way to reproduce the results below is to pull the `model_poller` image.
 ```bash
 docker pull popszer/model_poller
 ```
 
-2. Create a bucket on GCS and a subscription. Also make sure the API are available. This image is a POC and the IAM process is done with a Google Application Credentials `json` key passed to the container when running. 
-
-3. Run the `model_poller`
+2. Run the `model_poller`
 ```bash
 # Update the environment variables and the `model_poller` image version accordingly
 
 # Declare environment variables
 PROJECT_ID=tensorflow-serving-229609
-SUBSCRIPTION=testsubscription
+SUBSCRIPTION=model_subscription
 SAVE_DIR=/shared_dir/models
 GOOGLE_APPLICATION_CREDENTIALS="/shared_dir/tf-key.json"
 
@@ -37,6 +41,36 @@ docker run --name model_poller -t \
 -e GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS \
 model_poller:v.0.1.5 &
 ``` 
+
+While the container is running, upload some files in the bucket
+bucket (you could use the console or gsutil) and watch as changes scroll by
+in the app.
+
+## Setting up tensorflow serving
+
+The `model_poller` is a sidecar container to be used with [`tensorflow_serving`](https://www.tensorflow.org/serving/). The steps below are inspired from the official doc and gives perspective on how to use the two containers simultaneously.
+
+1. Download the TensorFlow Serving Docker image and repo
+```bash
+docker pull tensorflow/serving
+```
+2. Select a model to serve. For testing, you can find plenty of object detection models available on the [model zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md).
+I take [`faster_rcnn_inception_v2_coco`](http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz) as an example. _The use case here is the following_:
+You launch a first version `0001` of this model in production. After a while, you fin etune some hyper parameters and train it again. Now you want to serve the version `0002`.
+On your server you have a tensorflow/serving docker image running:
+
+```bash
+# TensorFlow Serving container and open the REST API port
+docker run -t --rm -p 8501:8501 \
+   -v "/home/fpaupier/tf_models/saved_model_faster_rcnn:/models/faster_rcnn" \
+   -e MODEL_NAME=faster_rcnn \
+   tensorflow/serving &
+```
+
+**You want the `model_poller` sidecar to download the models in the directory used by `tensorflow/serving` as the models' source** , e.g. the `/home/fpaupier/tf_models/saved_model_faster_rcnn` folder here. Then, the models with the highest version number will be automatically served/ (_i.e. if the folder contains a folder `000x` and one `000y` with `y > x`, the version `y` will be served).
+Upload the compressed model in the bucket listened by the `model_poller` and `tensorflow/serving` will start to serve it.
+
+There is no downtime for the switch of model version.
 
 ------------
 
@@ -82,3 +116,10 @@ docker build \
 ```
 
 You can now push your image to an image repository and use it combined with tensorflow-serving to continuously deploy model in production with 0 downtime in your service.
+
+## Next steps
+This project is a proof of concept, thus it can be enhanced in many ways.
+
+- [] Delete local model files when model are removed from the bucket.
+- [] Investigate different IAM process 
+- [] Propose a sample k8s.yaml configuration file that would be use to deploy the `model_poller` and `tensorflow/serving` containers at the same time.
