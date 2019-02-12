@@ -35,7 +35,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 WORKDIR /
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
-LABEL version="0.1.5"
+LABEL version="0.1.6"
 LABEL description="Download archived models from Google storage"
 
 EXPOSE 6006
