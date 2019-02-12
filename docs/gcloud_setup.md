@@ -1,12 +1,11 @@
-# Google Cloud Platform project setup
-
+# Google Cloud Platform setup
 
 [Google Cloud Platform ](https://cloud.google.com/) offers 300$ free credits to get you started.
 This is more than enough to run this project.
 
 1. Create an account and project.
 
-2. Authentication: This sample requires you to have authentication setup. Refer to the [Authentication Getting Started Guide](https://cloud.google.com/docs/authentication/getting-started) for instructions on setting up credentials for applications. In this tuto, I use a `json` service key that is passed to the conatiner at runtime.
+2. Authentication: This sample requires you to have authentication setup. Refer to the [Authentication Getting Started Guide](https://cloud.google.com/docs/authentication/getting-started) for instructions on setting up credentials for applications. In this tuto, I use a `json` service key that is passed to the container at runtime.
 
 3. Activate the Google Cloud Pub/Sub API, if you have not already done so.
    https://console.cloud.google.com/flows/enableapi?apiid=pubsub
