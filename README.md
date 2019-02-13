@@ -12,11 +12,11 @@ Then, tensorflow serving automatically load the new version, serves it and grace
 ![Model overview](assets/overview.png)
 
 1. After training, a model is exported as  [`saved_model`](https://www.tensorflow.org/guide/saved_model) that can be used for inference.  
-2. The folder containing the `saved_model` and its assosciated variables is named with a version number _e.g._ `0001`. The folder `0001` is compressed in a `zip` and uploaded in a storage bucket.
+2. The folder containing the `saved_model` and its assosciated variables is named with a version number _e.g._ `0002`. The folder `0002` is compressed in a `zip` and uploaded in a storage bucket.
 ```bash
 # Structure of the versionned model folder
 
- 0001/
+ 0002/
   |
   |--saved_model.pb 
   |
