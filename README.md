@@ -144,3 +144,6 @@ This project is a proof of concept, thus it can be enhanced in many ways.
 - [ ] Delete local model files when model are removed from the bucket.
 - [ ] Investigate different IAM process 
 - [ ] Propose a sample k8s.yaml configuration file that would be use to deploy the `model_poller` and `tensorflow/serving` containers at the same time.
+
+## Note
+This project is no longer updated and the architecture detailled here is not the most up to date. Refer to the official [tensorflow serving documentation](https://www.tensorflow.org/tfx/guide/serving) for up to date information and best practices. 
